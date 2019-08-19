@@ -14,6 +14,7 @@ int main(){
 
 	string instances_folder = "./instances/A/cases/";
 	string solution_folder = "./solutions/A/";
+
 	
 	if ((dir = opendir (instances_folder.c_str())) != NULL) {
 	  while ((ent = readdir (dir)) != NULL) {
@@ -23,7 +24,9 @@ int main(){
 	  		string full_path = instances_folder + file;
 
 	    	auto instance = load_graph(full_path);
-	    	print_graph(instance);
+
+	    	//print_graph(instance);
+	    	auto x = find_solution_CW(instance);
 
 	  	}
 	  		
