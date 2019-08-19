@@ -26,7 +26,7 @@ int main(){
 	    	auto instance = load_graph(full_path);
 
 	    	//print_graph(instance);
-	    	auto x = find_solution_CW(instance);
+	    	find_solution_CW(instance);
 
 	  	}
 	  		

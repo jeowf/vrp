@@ -219,50 +219,27 @@ graph load_graph(string path){
 
 
 // encontrar solução usando método de Clarke e Wright
-vector<cicle> find_solution_CW(graph & g){
-	cout << g.name << ":\n";
+void find_solution_CW(graph & g){
 	// iniciando variaveis
 
 	int n = g.dimension - 1; //
 	int n_ini = g.deposit;
 	demand_t cap = g.capacity;
 
-	vector<cicle> sol(n+1);
-
+	//vector<cicle> sol(n+1);
+	list<list<int>> sol;
 
 	vector<vector<distance_t>> savings;
-
 
 	savings.resize(n+1);
 	for (auto & e : savings)
 		e.resize(n+1);
 
 
-	// cada no eh atendido por um carro
-
-	for (int i = 1; i <= n; i++){
-		if (i != n_ini){
-			vector<int> nodes;
-			nodes.push_back(n_ini);
-			nodes.push_back(i);
-			nodes.push_back(n_ini);
-
-
-			cicle c;
-			c.nodes = nodes;
-			c.cost = 2*g.matrix[n_ini][i];
-			c.total_demand = g.nodes[i].demand;
-
-			sol[i] = c;
-		}
-		
-	}
-
-	//cout << "opa";
-
+	// calculando economia de custo par a par
 
 	vector<edge> list_savings;
-	// calculando economia de custo par a par
+
 	for (int i = 1; i <= n; i++){
 		for (int j = i+1; j <= n; j++){
 			if (i!= n_ini and j!= n_ini){
@@ -280,82 +257,122 @@ vector<cicle> find_solution_CW(graph & g){
 	//ordenação não crescente dos pares de nos
 	sort(list_savings.begin(), list_savings.end(), comp_dec);
 
-
+	// for (auto & e: list_savings){
+	// 	cout << e.i << " " << e.j << " " << e.cost << endl;
+	// }
 
 
 	disjoint_set ds(n+1);
+	vector< list<int> * > routes(n+1);
 
-	//vector<bool> mask(n+1);
+	for (int i = 1; i <= n; i++){
+		if (i != n_ini){
+			routes[i] = new list<int>;
+			routes[i]->push_back(i);
+		}
+	}
 
-	for(auto & e : list_savings){
+	int actual = -1;
 
-		int a = ds.find(e.i);
-		int b = ds.find(e.j);
+	for (auto & e : list_savings){
+		auto a = ds.find(e.i);
+		auto b = ds.find(e.j);
 
-		if ( a != b ){
-			//cout << "tnc";
-			if ( sol[a].nodes.size() > 0 and sol[a].nodes.size() < MAX_SIZE and
-			     sol[b].nodes.size() > 0 and sol[b].nodes.size() < MAX_SIZE ){
-				//cout << "a: " << a << ", b: " << b << "   ";
-				//cout << sol[a].nodes.size() << ", " << sol[b].nodes.size() << "  |||" << n  <<  endl;
-			
-				//cout << last_e(sol[a]) << " == " << a << ", " << first_e(sol[b]) << " == " << b << endl;
+		if (a != b){
+			demand_t demand_a = 0;
+			demand_t demand_b = 0;
+			for (auto k : *routes[e.i])
+				demand_a += g.nodes[k].demand;
 
-				if ( (last_e(sol[a]) == a and first_e(sol[b]) == b) 
-					//and ( (sol[a].total_demand + sol[b].total_demand) <= cap ) 
-					) {
-					//cout << "opa";
-					merge_cicle(sol[a],sol[b],savings,g);
-					ds.uni(a,b);
+			for (auto k : *routes[e.j])
+				demand_b += g.nodes[k].demand;
+
+
+			//cout << demand_a << " " << demand_b << endl; 
+
+			if ((demand_a + demand_b) <= cap){
+
+				if ( routes[e.i]->front() == e.i and routes[e.j]->back() == e.j ){
+
+					for (auto k : *routes[e.i]){
+						routes[e.j]->push_back(k);
+					}
+
+					routes[e.i]->clear();
+					routes[e.i] = routes[e.j];
+
+					ds.uni(e.j, e.i);
+
+				} else if (routes[e.i]->back() == e.i and routes[e.j]->front() == e.j){
+
+					for (auto k : *routes[e.j]){
+						routes[e.i]->push_back(k);
+					}
+
+					routes[e.j]->clear();
+					routes[e.j] = routes[e.i];
+
+					ds.uni(e.i, e.j);
 
 				}
 
+				//cout << endl;
 
 			}
-
-
 		}
 
+		//cout << a << " " << b << endl;
+
+
+		//actual = -1;
 	}
 
+	cout << g.name << endl;
 
-
-
-
-	set<int> cicles;
-	for (int k = 2; k <= n; k++){
-		auto a = ds.find(k);
-		cicles.insert(a);
+	map<list<int> *, int> res;
+	for (int x = 2; x <= n; x++){
+		res[routes[x]]++;
 	}
 
+	distance_t total_cost = 0;
 
+	for (auto & x : res){
+		if (x.first->size() > 0){
+			demand_t d = 0;
+			vector<int> gamb;
+			gamb.push_back(1);
 
-	for (auto & k : cicles){
-		if (sol[k].nodes.size() > 0 and sol[k].nodes.size() < MAX_SIZE){
-			cout << "> " ;
-			for (auto & g : sol[k].nodes){
-				cout <<  g << " ";
+			for (auto & p : *x.first){
+				d += g.nodes[p].demand;
+				cout << p << " ";
+				gamb.push_back(p);
 			}
-			cout << endl;
+
+			gamb.push_back(1);
+
+			distance_t co = 0;
+
+			for (int r = 0; r < gamb.size()-1; r++){
+				co += g.matrix[gamb[r]][gamb[r+1] ];
+			}
+
+			cout << " (" << d <<  ")" << endl;
+			total_cost += co;
 		}
 		
 	}
 
-	 	cout << endl;
-		cout << endl;
-		cout << endl;
+	cout << "Cost " << total_cost << endl;
 
+	cout << endl;
 
-
-
-	
-
-	return sol;
+	//return sol;
 
 }
 
-void print_graph(graph & g){
-	cout << g.name << " : " << g.dimension <<  endl;
+void show_solution(graph & g, list<list<int>> & l){
+
+	//cout << g.name << " : " << g.dimension <<  endl;
 }
 
 
