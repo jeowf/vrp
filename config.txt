@@ -1,0 +1,2 @@
+in:  ./instances/A/cases/
+out: ./solutions/A/
