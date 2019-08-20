@@ -31,3 +31,11 @@ Ao executar, escolha um algoritmo para utilizar. **Por hora, há apenas o aproxi
 Para salvar os resultados (sobre tempo de execução de cada caso de teste), basta executar:
 
 > ./exe > out.txt
+
+## Comparando com a solução ótima
+
+A solução ótima se encontra no caminho
+
+> instances/A/solutions/
+
+Para comparar basta verificar os arquivos com os gerados pelo nosso programa conforme o caminho especificado.
