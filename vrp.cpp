@@ -414,11 +414,47 @@ void save_solution(graph & g, map<list<int> *, int> & res, string out){
 
 }
 
+void print_solution(graph & g, map<list<int> *, int> & res){
+
+	//ofs << g.name << endl;
+
+	distance_t total_cost = 0;
+
+	for (auto & x : res){
+		if (x.first->size() > 0){
+			demand_t d = 0;
+			vector<int> gamb;
+			gamb.push_back(1);
+
+			for (auto & p : *x.first){
+				d += g.nodes[p].demand;
+				cout << p << " ";
+				gamb.push_back(p);
+			}
+
+			gamb.push_back(1);
+
+			distance_t co = 0;
+
+			for (int r = 0; r < gamb.size()-1; r++){
+				co += g.matrix[gamb[r]][gamb[r+1] ];
+			}
+
+			cout << " (" << d <<  ")" << endl;
+			total_cost += co;
+		}
+		
+	}
+
+	cout << "Cost " << total_cost << endl;
+
+	cout << endl;
+
+}
+
 void show_solution(graph & g, list<list<int>> & l){
 
 	//cout << g.name << " : " << g.dimension <<  endl;
 }
-
-
 
 #endif

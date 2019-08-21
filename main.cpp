@@ -13,15 +13,19 @@ int main(int argc, char const *argv[]){
 	DIR *dir;
 	struct dirent *ent;
 
+	DIR *dir2;
+	struct dirent *ent2;
+
 
 	ifstream config("./config.txt");
 	string instances_folder;
 	string solution_folder;
+	string opt_folder;
 	string trash;
 
 	config >> trash >> instances_folder;
 	config >> trash >> solution_folder;
-
+	config >> trash >> opt_folder;
 
 
 	if ((dir = opendir (instances_folder.c_str())) != NULL) {
@@ -66,9 +70,23 @@ int main(int argc, char const *argv[]){
 		    	auto end = chrono::steady_clock::now();
 
 		    	float elapsed_time = (std::chrono::duration <double, std::milli> (end-start).count());
-		    	cout << " " << file << " (" << elapsed_time <<"ms)\n";
+		    	cout << file << " (" << elapsed_time <<"ms)\n";
 
 		    	save_solution(instance, res, solution_folder);
+
+		    	cout << "Solution generated:\n";
+		    	print_solution(instance, res);
+
+		    	cout << "Optimal Solution:\n";
+
+		    	ifstream opt(opt_folder+instance.name);
+
+		    	string content( (std::istreambuf_iterator<char>(opt) ),
+                       (std::istreambuf_iterator<char>()    ) );
+		    	cout << content;
+		    	if (content.size() == 0)
+		    		cout << "There's no optimal solution file\n";
+		    	cout << "-----------------------\n";
 
 		  	}
 		  		
