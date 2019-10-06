@@ -13,6 +13,7 @@ typedef float demand_t;
 
 
 const int MAX_SIZE = 1000;
+const float INF = 999999999.9;
 
 struct node{
 	coord_t x;
@@ -57,6 +58,12 @@ struct cicle {
 
 
 
+
+
+
+
+
+// HEURISTICAS
 
 
 struct edge{
@@ -202,6 +209,7 @@ graph load_graph(string path){
 				g.matrix[i][j] = -1;
 			} else {
 				g.matrix[i][j] = dist(g.nodes[i], g.nodes[j]);
+				g.matrix[j][i] = dist(g.nodes[i], g.nodes[j]);
 				//cout << dist(g.nodes[i], g.nodes[j]) << " ";
 				//printf("[(%f,%f) & (%f,%f) = %f] ", g.nodes[i].x, g.nodes[i].y, g.nodes[j].x, g.nodes[j].y, g.matrix[i][j]);
 			}
@@ -371,6 +379,308 @@ map<list<int> *, int> find_solution_CW(graph & g){
 	//return sol;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+// EXATOS
+
+
+
+
+
+// BACKTRACKING
+
+demand_t bt_min_cost = INF;
+long int bt_iters = 0;
+vector<int> bt_sol;
+
+float sub_rout_cost(vector<int> & sub, graph & g, int b, int e){
+
+	float r = 0.0;
+
+	if (b != e){
+		r += g.matrix[1][sub[b]];
+
+		for (int i = b; i < e-1; i++){
+			r += g.matrix[sub[i]][sub[i+1]];
+		}
+
+		r += g.matrix[sub[e-1]][1];
+	}
+
+	//cout << r << endl;
+
+
+	//cout << "[" << b <<";" << e<< "]\n"; 
+
+
+	return r;
+
+}
+
+float solution_cost(vector<int> & sol, graph & g){
+
+
+	float c = 0.0;
+
+	int it = 2;
+	int b_it = 0, e_it = g.dimension;
+	float atual_c = 0.0;
+	while (it < g.dimension-1){
+
+		if (atual_c == 0){
+			b_it = it;
+		}
+
+		if (atual_c + g.nodes[sol[it]].demand > g.capacity){
+
+			e_it = it;
+
+			c += sub_rout_cost(sol, g, b_it, e_it);
+			atual_c = 0;
+
+		} else {
+			atual_c += g.nodes[sol[it]].demand;
+			it++;
+		}
+
+		
+	}
+
+	c += sub_rout_cost(sol, g, b_it, g.dimension);
+
+	return c;
+
+}
+
+void backtracking( vector<bool> & mask, graph & g, demand_t cost, int customers, int previous, vector<int> & sol){
+
+	//cout << bt_iters++ << endl;
+	// chegou numa folha
+
+
+	if (customers == g.dimension - 2){
+
+		float c = solution_cost(sol, g);
+
+		// for (int i = 0; i < g.dimension; i++){
+		// 	//bt_sol[i] = sol[i];
+		// 	cout << sol[i] << " ";
+		// }
+		// cout << c << "/" << bt_min_cost << endl; 
+
+		//cout << endl;
+
+		if ( c < bt_min_cost){
+			bt_min_cost = c;
+
+			
+			for (int i = 0; i < g.dimension; i++){
+				bt_sol[i] = sol[i];
+				//cout << sol[i] << " ";
+			}
+
+			//cout << bt_min_cost << endl;
+
+
+		}
+
+		//cout << c << "/" << bt_min_cost << endl; 
+
+
+		//cout << "fim\n";
+
+		return;
+
+	}
+
+	// poda simples
+	if (cost > bt_min_cost){
+		//cout << "poda\n";
+		return;
+	}
+
+
+	// chamada do bt
+	for (int i = 2; i < g.dimension; i++){
+		if (!mask[i]){
+
+			mask[i] = true;
+			sol[customers+2] = i;
+
+			backtracking(mask, g, cost + g.matrix[previous][i], customers + 1, i, sol);
+			
+			//sol[customers+2] = 0;
+			mask[i] = false;
+		}
+	}
+
+}
+
+
+map<list<int> *, int> find_solution_backtracking(graph & g){
+	
+	bt_min_cost = INF;
+	bt_sol.resize(g.dimension);
+
+
+	map<list<int> *, int> res;
+
+	vector<bool> mask(g.dimension, false);
+	vector<int> sol(g.dimension, 0);
+
+	backtracking(mask, g, 0.0, 0, 1, sol);
+
+
+
+	float c = 0.0;
+
+	int it = 2;
+	//int b_it = 0, e_it = g.dimension;
+	float atual_c = 0.0;
+
+	list<int> * route;
+
+	while (it < g.dimension){
+
+		if (atual_c == 0){
+			//b_it = it;
+			route = new list<int>;
+		}
+
+		if (atual_c + g.nodes[bt_sol[it]].demand > g.capacity){
+
+			res[route] = atual_c;
+
+			atual_c = 0;
+
+		} else {
+			atual_c += g.nodes[bt_sol[it]].demand;
+
+			route->push_back(bt_sol[it]);
+
+			it++;
+		}
+
+		
+	}
+
+	if (atual_c > 0){
+		res[route] = atual_c;
+
+	}
+
+
+
+	//c += sub_rout_cost(sol, g, b_it, g.dimension);
+
+	// cout <<  "MIN COST : " << bt_min_cost << endl ;
+
+	return res;
+
+
+}
+
+
+
+
+
+
+// PROGRAMACAO DINAMICA
+
+
+/*
+map<list<int> *, int> find_solution_dp(graph & g){
+	map<list<int> *, int> res;
+
+	for (int l = 0; l < g.dimension-1; l++){
+
+
+
+	}
+
+
+	return res;
+}
+
+
+*/
+
+
+
+
+
+
+
+// BRANCH AND BOUND
+
+enum status{
+	NOT_LEAF,
+	VALID_LEAF,
+	NOT_VALID_LEAF
+};
+
+// node of the BB tree
+struct solution{
+	int atual_node;
+
+	float cost; // limite inferior
+	solution * previous;
+
+	status st;
+
+	solution(int a, float c = 0.0, solution * p = nullptr, status s = NOT_LEAF){
+		atual_node = a;
+		cost = c;
+		previous = p;
+		st = s;	
+	}
+
+};
+
+vector<bool> get_mask_of_path(solution * sol, int size){
+
+	vector<bool> res(size, false);
+
+	solution * it = sol;
+
+	while (it == nullptr){
+		res[it->atual_node] = true;
+		it = it->previous;
+	}
+
+
+	return res;
+
+}
+
+map<list<int> *, int> find_solution_bb(graph & g){
+
+	map<list<int> *, int> res;
+
+
+	return res;
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 void save_solution(graph & g, map<list<int> *, int> & res, string out){
 
