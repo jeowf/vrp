@@ -1,0 +1,41 @@
+Input folder: ./instances/A/cases/
+Choose the algorithm: 
+ Heuristic 
+  1 - Clarke & Wright 
+ Exact 
+  2 - Backtracking 
+  3 - Branch and Bound 
+ Meta-heuristic 
+  * <none> 
+
+Using Branch and Bound 
+5
+A-n05-k1.vrp (11.1461ms)
+Solution generated:
+2 4 3 5  (65)
+Cost 231.929
+
+Optimal Solution:
+There's no optimal solution file
+-----------------------
+5
+A-n07-k2.vrp (2811.47ms)
+Solution generated:
+2 7 6  (42)
+5 3 4  (46)
+Cost 489.243
+
+Optimal Solution:
+There's no optimal solution file
+-----------------------
+5
+A-n09-k3.vrp (67611.5ms)
+Solution generated:
+2 9 3 7 5  (57)
+8 6 4  (47)
+Cost 392.478
+
+Optimal Solution:
+There's no optimal solution file
+-----------------------
+5

@@ -36,7 +36,7 @@ int main(int argc, char const *argv[]){
 		cout << "  1 - Clarke & Wright \n";
 		cout << " Exact \n";
 		cout << "  2 - Backtracking \n";
-		cout << "  3 - Backtracking (with time limit) \n";
+		cout << "  3 - Branch and Bound \n";
 		cout << " Meta-heuristic \n";
 		cout << "  * <none> \n";
 		cout << endl;
@@ -51,9 +51,8 @@ int main(int argc, char const *argv[]){
 		} else if (option == 2){
 			cout << "Using Backtracking\n";
 		} else if (option == 3){
-			cout << "Using Backtracking ()(with time limit) \n";
-			cout << "Type the time limit (in seconds):\n";
-			cin >> time_limit;
+			cout << "Using Branch and Bound \n";
+
 		} else {
 			cout << "ERROR: invalid option.\n";
 			return EXIT_FAILURE;
@@ -77,6 +76,8 @@ int main(int argc, char const *argv[]){
 		    	} else if (option == 2) {
 		    		res = find_solution_backtracking(instance);
 		    	} else if (option == 3){
+		    		
+		    		res = find_solution_bb(instance);
 
 		    	} else if (option == 4){
 

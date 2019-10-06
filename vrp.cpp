@@ -633,39 +633,350 @@ struct solution{
 	int atual_node;
 
 	float cost; // limite inferior
+
+	float atual_distance;
+	float demand;
+
 	solution * previous;
 
+	int nivel;
 	status st;
 
-	solution(int a, float c = 0.0, solution * p = nullptr, status s = NOT_LEAF){
+	solution(int a, float c = 0.0, float d = 0.0, float e = 0.0, solution * p = nullptr, int n = 0, status s = NOT_LEAF){
 		atual_node = a;
 		cost = c;
+		atual_distance = d;
+		demand = e;
 		previous = p;
+		nivel = n;
 		st = s;	
 	}
-
 };
 
-vector<bool> get_mask_of_path(solution * sol, int size){
+struct extended_graph{
+	string name;
+	int vehicles;
+	int dimension;
+	demand_t capacity;
 
-	vector<bool> res(size, false);
+	int deposit;
+
+	vector<node> nodes;
+	vector<vector<distance_t>> matrix;
+
+	extended_graph(){}
+
+	extended_graph(graph & g, int v){ 
+		name = g.name;
+		vehicles = v;
+		dimension = g.dimension + v;
+		capacity = g.capacity;
+
+		deposit = g.deposit;
+
+		nodes.resize(g.dimension + vehicles);
+		for (int i = 0; i < dimension; ++i) {
+			if (i >= g.dimension){
+				node n;
+				n.x = g.nodes[1].x;
+				n.y = g.nodes[1].y;
+				n.demand = g.nodes[1].demand;
+
+				nodes[i] = n;
+			} else {
+				nodes[i] = g.nodes[i];
+			}
+		}
+
+		matrix.resize(dimension);
+		for (auto & e : matrix)
+			e.resize(dimension);
+
+		for(int i = 0; i < dimension; i++){
+			for(int j = 0; j < dimension; j++){
+				if (i == j){
+					matrix[i][j] = INF;
+				} else {
+					if (i < g.dimension and j < g.dimension){
+						matrix[i][j] = g.matrix[i][j];
+					} else if (i < g.dimension and j >= g.dimension){
+						matrix[i][j] = g.matrix[i][1];
+					} else if (i >= g.dimension and j < g.dimension){
+						matrix[i][j] = g.matrix[1][j];
+
+					} else {
+						matrix[i][j] = 0;
+					}
+
+				}
+
+				//cout << matrix[i][j] << " ";
+			}
+			//cout << endl;
+
+
+		}
+
+	}
+};
+
+vector<int> get_mask_of_path(solution * sol, int size){
+
+	vector<int> res(size, 0);
 
 	solution * it = sol;
 
-	while (it == nullptr){
-		res[it->atual_node] = true;
+	while (it->previous != nullptr){
+		res[it->atual_node]+=2;
+		res[it->previous->atual_node]+=1;
+		it = it->previous;
+	}
+
+
+	// se o valor na mascara for 1, quer dizer que a linha está bloqueada
+	// se for 2, entao a coluna está bloqueada
+	// se for 3, ambos estão bloqueados
+	return res;
+}
+
+// lower bound
+float get_cost_of_solution(solution * sol, extended_graph & eg){
+	float res = 0.0;
+
+	auto mask = get_mask_of_path(sol, eg.dimension);
+
+	for (int i = 2; i < eg.dimension; ++i) {
+
+		if (mask[i] != 1 or mask[i] != 3){
+
+			float m = INF;
+
+			for (int j = 2; j < eg.dimension; ++j) {
+				if (mask[j] != 2 or mask[j] != 3){
+
+					if (eg.matrix[i][j] < m){
+						m = eg.matrix[i][j];
+					}
+
+				}
+			}
+
+			res += m;
+		}
+		
+	}
+
+	res += sol->atual_distance;
+
+	return res;
+}
+
+class Compare {
+	public:
+    bool operator() (solution * lhs, solution * rhs)
+    {
+        return lhs->cost > rhs->cost;
+    }
+};
+
+
+list<int> get_path(solution * sol, int depot){
+
+	list<int> res;
+
+	res.push_front(1);
+
+	solution * it = sol;
+
+	while (it != nullptr){
+		// res[it->atual_node]+=2;
+		// res[it->previous->atual_node]+=1;
+		if (it->atual_node >= depot)
+			res.push_front(1);
+		else
+			res.push_front(it->atual_node);
+
 		it = it->previous;
 	}
 
 
 	return res;
 
+
 }
+
+
 
 map<list<int> *, int> find_solution_bb(graph & g){
 
+	// int atual_node;
+	// float cost; // limite inferior
+	// float atual_distance;
+	// float demand;
+	// solution * previous;
+	// int nivel
+	// status st;
+
 	map<list<int> *, int> res;
 
+	int k = 5;
+	if (g.dimension <= 20)
+		k = 5;
+	else if (g.dimension > 20 and g.dimension < 32)
+		k = 7; 
+	else if ( g.dimension > 32 and g.dimension < 39)
+		k = 9;
+	else
+		k = 10;
+
+	cout << k << endl;
+	extended_graph eg(g,k);
+	priority_queue<solution *, vector<solution *>, Compare> pq;
+
+	int depot = g.dimension;
+
+	solution * s = new solution(depot);
+	s->cost = get_cost_of_solution(s, eg);
+	//pq.push(s);
+
+	vector<int> mask_ini(eg.dimension, 0);
+	mask_ini[depot] = 1;
+
+	for (int i = 2; i < eg.dimension; i++){
+		if (mask_ini[i] == 0){
+			solution * x = new solution(i, 0.0, eg.matrix[depot][i], eg.nodes[i].demand, s, 1);
+			x->cost = get_cost_of_solution(x, eg);
+			pq.push(x);
+		}
+	}
+
+	int max_nivel = 0;
+
+	while (!pq.empty()){
+		auto t = pq.top();
+		auto t_mask = get_mask_of_path(t, eg.dimension);
+
+		//cout << t->atual_node << " (dist:" << t->atual_distance << ", dem:" << t->demand << ") PREV " << t->previous->atual_node << " NIVEL" << t->nivel << endl;
+		//bool leaf = true;
+
+
+		if (t->st==NOT_LEAF){
+			for (int i = 2; i < eg.dimension; i++){
+				if (t_mask[i] == 0){
+					//leaf = false;
+
+					solution * x = new solution(i, 0.0,  
+												t->atual_distance + eg.matrix[t->atual_node][i], 
+												t->demand + eg.nodes[i].demand, 
+												t,
+												t->nivel+1);
+					x->cost = get_cost_of_solution(x, eg);
+
+					if (x->atual_node >= depot){
+						x->demand = 0;
+					}
+
+					if (x->nivel == eg.dimension-3){
+						x->st = VALID_LEAF;
+					}
+
+					if (x->demand > eg.capacity){
+						x->st = NOT_VALID_LEAF;
+					}
+
+					// if (x->nivel > max_nivel){
+					// 	max_nivel = x->nivel;
+					// 	cout << max_nivel << endl;
+					// }
+					pq.push(x);
+				}
+			}
+
+		} else if (t->st == VALID_LEAF){
+			//cout << "MIN " <<  (t->atual_distance + eg.matrix[t->atual_node][depot]) << endl;
+
+			auto r_list = get_path(t, depot);
+
+			bool ro = true;
+
+			list<int> * aux = new list<int>;
+			float dem = 0.0;
+			
+			//cout << r_list.front() << endl;
+
+			r_list.pop_front();
+
+
+
+			while(!r_list.empty()){
+				auto f = r_list.front();
+				//cout << f << endl;
+
+				if (f == 1){
+					if (!aux->empty()){
+
+						// for (auto & e : *aux){
+						// 	cout << e << " ";
+						// }
+						// cout << endl;
+						res[aux] = dem;
+
+					}
+
+					dem = 0.0;
+					aux = new list<int>;
+
+				} else {
+					dem += g.nodes[f].demand;
+					aux->push_back(f);
+				}
+
+
+				r_list.pop_front();
+
+			}
+
+			break;
+		}
+		
+
+		//cout << pq.top()->atual_node << " cost = " << pq.top()->demand  << endl;
+		pq.pop();
+	}
+
+	// cout << "FINISHED\n";
+
+	// distance_t total_cost = 0;
+
+	// for (auto & x : res){
+	// 	if (x.first->size() > 0){
+	// 		demand_t d = 0;
+	// 		vector<int> gamb;
+	// 		gamb.push_back(1);
+
+	// 		for (auto & p : *x.first){
+	// 			d += g.nodes[p].demand;
+	// 			cout << p << " ";
+	// 			gamb.push_back(p);
+	// 		}
+
+	// 		gamb.push_back(1);
+
+	// 		distance_t co = 0;
+
+	// 		for (int r = 0; r < gamb.size()-1; r++){
+	// 			co += g.matrix[gamb[r]][gamb[r+1] ];
+	// 		}
+
+	// 		cout << " (" << d <<  ")" << endl;
+	// 		total_cost += co;
+	// 	}
+		
+	// }
+
+	// cout << "Cost " << total_cost << endl;
+
+	// cout << endl;
 
 	return res;
 
