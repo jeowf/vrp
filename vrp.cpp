@@ -829,7 +829,7 @@ map<list<int> *, int> find_solution_bb(graph & g){
 	else
 		k = 10;
 
-	cout << k << endl;
+	//cout << k << endl;
 	extended_graph eg(g,k);
 	priority_queue<solution *, vector<solution *>, Compare> pq;
 

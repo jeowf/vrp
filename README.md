@@ -27,7 +27,7 @@ Para executar o programa, basta navegar na pasta onde o arquivo *exe* foi gerado
 
 > ./exe
 
-Ao executar, escolha um algoritmo para utilizar. **Por hora, há apenas o aproximativo de Clarke & Wright**, porém, a medida que formos implementado os demais algoritmos, novas opções irão surgir.
+Ao executar, escolha um algoritmo para utilizar. 
 
 Para salvar os resultados (sobre tempo de execução de cada caso de teste), basta executar:
 
