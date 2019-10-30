@@ -7,16 +7,19 @@
 
 using namespace std;
 
+float epsilon = 1.0;
+
+
 struct cromossome{
 	vector<int> sol;
-	float demand;
+	vector<float> demand;
 	float cost;
 	float fitness;
 	bool feasible;
 
 	cromossome(){ }
 
-	cromossome(vector<int> s, float d, float c, floa fi, bool f = true){
+	cromossome(vector<int> s, vector<float> d, float c, floa fi, bool f = true){
 		sol = s;
 		demand = d;
 		cost = c;
@@ -29,18 +32,49 @@ struct cromossome{
 
 float sol_cost(cromossome & c, graph & g){
 
-	float res = 0;
-	
+	float res = 0.0;
 
-	res += g.matrix[1][c.sol[0]];
+	float dist = 0.0;	
+
+	dist += g.matrix[1][c.sol[0]];
 
 	for (int i = 0; i < c.sol.size()-1; i++){
-		res+= g.matrix[c.sol[i]][c.sol[i+1]];
+		dist+= g.matrix[c.sol[i]][c.sol[i+1]];
 	}
 
-	res += g.matrix[c.sol[c.sol.size()-1]][1];
+	dist += g.matrix[c.sol[c.sol.size()-1]][1];
 
-	return res;
+	c.cost = dist;
+
+
+	int vehicle = 0;
+	vector<float> demands;
+
+	float local_demand = 0.0;
+
+	float penalty = 0.0;
+
+	for (int i = 0; i < c.sol.size(); i++){
+		if (c.sol[i] == 1 or i == c.sol.size()-1){
+
+			if (local_demand > g.capacity)
+				penalty += g.capacity - local_demand;
+
+			demands.push_back(local_demand);
+			local_demand = 0;
+		} else {
+			local_demand += c.sol[i];
+		}
+	}
+
+	c.demand = demands;
+
+	if (penalty > 0)
+		c.feasible = false;
+
+	return dist + penalty*epsilon;
+
+	//return res;
 
 
 }
