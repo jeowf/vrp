@@ -2,6 +2,7 @@
 #include <dirent.h>
 
 #include "vrp.cpp"
+#include "ga.cpp"
 
 using namespace std;
 
