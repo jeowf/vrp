@@ -39,7 +39,8 @@ int main(int argc, char const *argv[]){
 		cout << "  2 - Backtracking \n";
 		cout << "  3 - Branch and Bound \n";
 		cout << " Meta-heuristic \n";
-		cout << "  * <none> \n";
+		cout << "  4 - Genetic Algorithm \n";
+		cout << "  5 - Tabu Search \n";
 		cout << endl;
 
 		float time_limit = 0.0;
@@ -53,7 +54,8 @@ int main(int argc, char const *argv[]){
 			cout << "Using Backtracking\n";
 		} else if (option == 3){
 			cout << "Using Branch and Bound \n";
-
+		} else if (option == 4){
+			cout << "Using Genetic Algorithm \n";
 		} else {
 			cout << "ERROR: invalid option.\n";
 			return EXIT_FAILURE;
@@ -81,6 +83,8 @@ int main(int argc, char const *argv[]){
 		    		res = find_solution_bb(instance);
 
 		    	} else if (option == 4){
+
+		    		res = find_solution_GA(instance);
 
 		    	}
 

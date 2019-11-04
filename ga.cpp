@@ -8,6 +8,12 @@
 using namespace std;
 
 float epsilon = 1.0;
+int population_size = 40;
+
+
+
+unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+auto aux_seed = seed;
 
 
 struct cromossome{
@@ -19,7 +25,7 @@ struct cromossome{
 
 	cromossome(){ }
 
-	cromossome(vector<int> s, vector<float> d, float c, floa fi, bool f = true){
+	cromossome(vector<int> s, vector<float> d, float c, float fi, bool f = true){
 		sol = s;
 		demand = d;
 		cost = c;
@@ -29,8 +35,11 @@ struct cromossome{
 	}
 };
 
+float fitness_function(float cost){
+	return 1/cost;
+}
 
-float sol_cost(cromossome & c, graph & g){
+void calcule_fitness(cromossome & c, graph & g){
 
 	float res = 0.0;
 
@@ -72,20 +81,54 @@ float sol_cost(cromossome & c, graph & g){
 	if (penalty > 0)
 		c.feasible = false;
 
-	return dist + penalty*epsilon;
-
-	//return res;
-
+	c.fitness = fitness_function(dist + penalty*epsilon);
 
 }
 
+void fitness(vector<cromossome> population, graph & g){
+	for (auto & e : population)
+		calcule_fitness(e, g);
+}
+
+
+vector<cromossome> initialize_population(graph & g, int pop_size){
+	vector<cromossome> population;
+
+	for (int i = 0; i < pop_size; ++i) {
+		cromossome c;
+		vector<int> sol;
+
+		for (int j = 2; j < g.dimension; ++j) {
+			sol.push_back(j);
+		}
+
+		aux_seed = (unsigned) default_random_engine(aux_seed);
+
+		shuffle(sol.begin(), sol.end(), default_random_engine(aux_seed) );
+
+		c.sol = sol;
+
+
+		for (auto & e : c.sol) {
+			cout << e << " ";
+		}
+		cout << endl;
+	}
+
+
+	return population;
+}
 
 
 cromossome genetic_algorithm(graph & g){
 
+	cout << "Using " << seed << " as seed\n";
+
 	cromossome res;
 
+	vector<cromossome> population = initialize_population(g, population_size);
 
+	cout << endl << endl;
 
 	return res;
 
@@ -96,7 +139,14 @@ cromossome genetic_algorithm(graph & g){
 
 
 map<list<int> *, int> find_solution_GA(graph & g){
+	map<list<int> *, int> res;
 
+	auto c = genetic_algorithm(g);
+
+	int a;
+	cin >> a;
+
+	return res;
 
 }
 
