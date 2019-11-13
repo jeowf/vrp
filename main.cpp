@@ -3,6 +3,7 @@
 
 #include "vrp.cpp"
 #include "ga.cpp"
+#include "tabu.cpp"
 
 using namespace std;
 
@@ -56,6 +57,8 @@ int main(int argc, char const *argv[]){
 			cout << "Using Branch and Bound \n";
 		} else if (option == 4){
 			cout << "Using Genetic Algorithm \n";
+		} else if (option == 5){
+			cout << "Using Tabu Search \n";
 		} else {
 			cout << "ERROR: invalid option.\n";
 			return EXIT_FAILURE;
@@ -86,6 +89,9 @@ int main(int argc, char const *argv[]){
 
 		    		res = find_solution_GA(instance);
 
+		    	} else if (option == 5){
+
+		    		res = find_solution_tabu(instance);
 		    	}
 
 		    	auto end = chrono::steady_clock::now();
