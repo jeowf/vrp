@@ -205,6 +205,8 @@ void crossover(cromossome & lhs, cromossome & rhs, graph & g, int crossover_type
 
 }
 
+/*
+
 void crossover(vector<cromossome> & population, vector<pair<cromossome, cromossome>> & pairs, graph & g){
 
 
@@ -218,6 +220,7 @@ void crossover(vector<cromossome> & population, vector<pair<cromossome, cromosso
 
 }
 
+*/
 vector<cromossome> initialize_population(graph & g, int pop_size){
 
 	vector<cromossome> population;
