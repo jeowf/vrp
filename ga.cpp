@@ -205,6 +205,19 @@ void crossover(cromossome & lhs, cromossome & rhs, graph & g, int crossover_type
 
 }
 
+void crossover(vector<cromossome> & population, vector<pair<cromossome, cromossome>> & pairs, graph & g){
+
+
+	for (auto & e : pairs){
+		auto c = crossover(e.first, e.second, g);
+		calcule_fitness(c, g);
+
+		population.push_back(c);
+	}
+
+
+}
+
 vector<cromossome> initialize_population(graph & g, int pop_size){
 
 	vector<cromossome> population;
@@ -255,6 +268,7 @@ cromossome genetic_algorithm(graph & g){
 
 	while (i < 500){
 
+		auto selected
 		crossover(population[rand() % population_size],population[rand() % population_size],g);
 
 
