@@ -23,21 +23,13 @@ typedef map<db,vd> mvd;
 typedef vector<tabu> vt;
 typedef set<vector<int> > svd;
 
-void aspiration();
 int is_tabu_move(int x, int y, int pos_x, int pos_y);
 void add_tabu_nodes(int x, int y, int pos_x, int posy);
-void add_to_div_list(vd n, db cost);
 db neighbor_cost(graph & g, vd path);
 vd exchange(int i, int j, vd &n);
 void insertion(int i, int j, db a, vd &n);
 void get_neighbor(int i, int &it, int &flag, db &int_best_cost,graph & g);
-void load_costs();
-void read_init_sol();
-void load_demand();
-void print(vd x);
-void print_matriz(vvd &x);
-void print_map(mvd);
-void print_tabu_list(vt tabu_list);
+
 
 vd path;             //local solution
 vt tabu_list;        //list of tabú movements
@@ -130,7 +122,7 @@ map<list<int> *, int> find_solution_tabu(graph & g){
     }
 
   res[final_path] = 0;
-  
+
   return res;
 
 }
