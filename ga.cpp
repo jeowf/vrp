@@ -7,15 +7,17 @@
 
 using namespace std;
 
-float epsilon = 1.0;
-int population_size = 50;
+float epsilon = 5.0;
+int population_size = 100;
 int selection_size = 30;
-int total_pop_size = 100;
+int total_pop_size = 150;
+
+float mut_percent = 0.5;
 
 
 
 //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-unsigned seed = 1;
+unsigned seed = 2;
 auto aux_seed = seed;
 
 
@@ -25,15 +27,19 @@ struct cromossome{
 	float cost;
 	float fitness;
 	bool feasible;
+	bool mutation;
 
-	cromossome(){ }
+	cromossome(){ 
+		mutation = false;
+	}
 
-	cromossome(vector<int> s, vector<float> d, float c, float fi, bool f = true){
+	cromossome(vector<int> s, vector<float> d, float c, float fi, bool f = true, bool m = false){
 		sol = s;
 		demand = d;
 		cost = c;
 		fitness = fi;
 		feasible = f;
+		mutation = m;
 
 	}
 };
@@ -67,24 +73,32 @@ void calcule_fitness(cromossome & c, graph & g){
 	float penalty = 0.0;
 
 	for (int i = 0; i < c.sol.size(); i++){
+		//cout << local_demand << endl;
 		if (c.sol[i] == 1 or i == c.sol.size()-1){
+			//cout << local_demand << endl;
 
-			if (local_demand > g.capacity)
-				penalty += g.capacity - local_demand;
+			if (local_demand > g.capacity){
+				penalty += local_demand - g.capacity;
+				//cout << penalty << endl ;
+
+			}
 
 			demands.push_back(local_demand);
 			local_demand = 0;
 		} else {
-			local_demand += c.sol[i];
+			local_demand += g.nodes[c.sol[i]].demand;
 		}
 	}
 
 	c.demand = demands;
 
-	if (penalty > 0)
+	if (penalty > 0.0)
 		c.feasible = false;
+	else
+		c.feasible = true;
 
 	c.fitness = fitness_function(dist + penalty*epsilon);
+	c.mutation = false;
 
 }
 
@@ -95,14 +109,15 @@ void fitness(vector<cromossome> & population, graph & g){
 
 
 
-vector<pair<cromossome, cromossome>> selection(vector<cromossome> population, graph & g){
+vector<cromossome> selection(vector<cromossome> & population, graph & g){
 
 	int n = population.size();
 
-	vector<pair<cromossome, cromossome>> res;
+	vector<cromossome> res;
 
 	for (int i = 0; i < selection_size; i++){
-		res.push_back(make_pair( population[rand() % n], population[rand() % n] ));
+		res.push_back(population[rand() % n]);
+		res.push_back(population[rand() % n]);
 	}
 
 	return res;
@@ -110,12 +125,12 @@ vector<pair<cromossome, cromossome>> selection(vector<cromossome> population, gr
 }
 
 
-pair<cromossome, cromossome> one_point_crossover(cromossome & lhs, cromossome & rhs, graph & g){
+void one_point_crossover(cromossome & lhs, cromossome & rhs, graph & g, vector<cromossome> & population){
 	int n = min(lhs.sol.size(), rhs.sol.size());
 	int N = max(lhs.sol.size(), rhs.sol.size());
 
 	int point = rand() % n;
-	/*
+	
 	cout << "Crossover\n";
 
 	cout << " (1) ";
@@ -132,12 +147,12 @@ pair<cromossome, cromossome> one_point_crossover(cromossome & lhs, cromossome & 
 
 
 	cout << " Selected point was " << point << endl;
-	*/
+	
 	vector<int> a;
 	vector<int> b;
 
-	vector<int> aux_a(N+1,0);
-	vector<int> aux_b(N+1,0);
+	vector<int> aux_a(N+1, 0);
+	vector<int> aux_b(N+1, 0);
 
 	// 2 3 6 | 9 5 8 4
 	// 4 2 5 | 8 6 9 3 
@@ -205,10 +220,12 @@ pair<cromossome, cromossome> one_point_crossover(cromossome & lhs, cromossome & 
 	calcule_fitness(c_a, g);
 	calcule_fitness(c_b, g);
 
-	return make_pair(c_a,c_b);
+	population.push_back(c_a);
+	population.push_back(c_b);
 
-	/*
+	//return make_pair(c_a,c_b);
 
+	
 	cout << " generates " << endl;
 
 	cout << " (a) ";
@@ -222,30 +239,27 @@ pair<cromossome, cromossome> one_point_crossover(cromossome & lhs, cromossome & 
 		cout << e << " ";
 	}
 	cout << endl;
-	*/
+	
 }
 
 
 
-pair<cromossome, cromossome> crossover(cromossome & lhs, cromossome & rhs, graph & g, int crossover_type = 1){
+void crossover(cromossome & lhs, cromossome & rhs, graph & g, vector<cromossome> & population, int crossover_type = 1){
 
 	if (crossover_type == 1)
-		return one_point_crossover(lhs, rhs, g);
+		one_point_crossover(lhs, rhs, g, population);
+
+
 
 }
 
 
 
-void crossover(vector<cromossome> & population, vector<pair<cromossome, cromossome>> & pairs, graph & g){
+void crossover(vector<cromossome> & population, vector<cromossome> & pairs, graph & g){
 
 
-	for (auto & e : pairs){
-		auto c = crossover(e.first, e.second, g);
-		calcule_fitness(c.first, g);
-		calcule_fitness(c.second, g);
-
-		population.push_back(c.first);
-		population.push_back(c.second);
+	for (int i = 0; i < pairs.size(); i += 2){
+		crossover(pairs[i], pairs[i+1], g, population);
 	}
 
 
@@ -283,6 +297,101 @@ vector<cromossome> initialize_population(graph & g, int pop_size){
 	return population;
 }
 
+void make_feasible(cromossome & c, graph & g){
+
+	int n = c.sol.size();
+
+	float local_demand = 0.0;
+
+	//float penalty = 0.0;
+
+	int a = 0;
+	int b = n;
+
+	for (int i = 0; i < n; i++){
+		if (c.sol[i] == 1 or i == n-1){
+
+			b = i;
+			if (i == n-1)
+				b += 1;
+
+			if (local_demand > g.capacity){
+				//penalty += local_demand - g.capacity;
+				break;
+
+			}
+
+			a = i+1;
+			local_demand = 0;
+		} else {
+
+			local_demand += g.nodes[c.sol[i]].demand;
+		}
+	}
+
+	int r = rand() % (b-a-1);
+	c.sol.insert(c.sol.begin() + a + r, 1);
+
+}
+
+void mutation(cromossome & c, graph & g){
+
+	int n = c.sol.size();
+
+	int a = rand() % n;
+	int b = a;
+
+	while (b == a)
+		b = rand() % n;
+
+	int v_a = c.sol[a];
+	int v_b = c.sol[b];
+
+	c.sol[a] = v_b;
+	c.sol[b] = v_a;
+
+}
+
+void mutation(vector<cromossome> population,  graph & g){
+
+	int n = population.size();
+	int q = n * mut_percent;
+
+	for(int i = 0; i < q; i++){
+		int c_i = rand() % n;
+		cromossome & c = population[c_i];
+/*
+		for (auto & e : c.sol)
+			cout << e << " ";
+		cout << " -- " << c.fitness << " -- " << c.feasible << endl;
+*/
+		if (c.feasible)
+			mutation(c,g);
+		else
+			make_feasible(c,g);
+
+
+
+		calcule_fitness(c,g);
+/*
+		for (auto & e : c.sol)
+			cout << e << " ";
+		cout << " -- " << c.fitness << " -- " << c.feasible << endl;
+*/
+
+		//cin >> c_i;
+
+	}
+
+
+
+
+}
+
+
+bool comp(cromossome lhs, cromossome rhs){
+	return lhs.fitness > rhs.fitness;
+}
 
 cromossome genetic_algorithm(graph & g){
 
@@ -299,29 +408,60 @@ cromossome genetic_algorithm(graph & g){
 	int it_limit = 500;
 	int i = 0;
 
+	vector<cromossome> sel;
 
-	while (i < 500){
+	vector<int> a = { 2, 3, 1, 5, 6, 1, 4, 7};
+	vector<int> b = { 7, 1, 2, 1, 5, 6, 1, 3, 4 };
+	cromossome c_a;
+	cromossome c_b;
+
+	c_a.sol = a;
+	c_b.sol = b;
+
+	calcule_fitness(c_a, g);
+	calcule_fitness(c_b, g);
+
+	sel.push_back(c_a);
+	sel.push_back(c_b);
+
+	crossover(population, sel, g);
+	//mutation(population, g);
+
+
+/*
+
+	while (i < 200){
 
 		
 		//crossover(population[rand() % population_size],population[rand() % population_size],g);
 		auto sel = selection(population, g);
 		crossover(population, sel, g);
 
-		//mutation(population, g);
+		//cout << "MUT\n";
+		mutation(population, g);
+
+		sort(population.begin(), population.end(), comp);
+		population.resize(total_pop_size);
+
 
 		i++;
 	}
 
+	for (auto & e: population[0].sol)
+		cout << e << " ";
+	cout << endl;
 
-
-	int a;
-	cin >> a;
+	cout << population[0].cost << endl;
+*/	
+	int k;
+	cin >> k;
 
 	//cout << endl << endl;
-
+	//population.clear();
 	return res;
 
 }
+
 
 
 
@@ -332,8 +472,8 @@ map<list<int> *, int> find_solution_GA(graph & g){
 
 	auto c = genetic_algorithm(g);
 
-	int a;
-	cin >> a;
+	//int a;
+	//cin >> a;
 
 	return res;
 
