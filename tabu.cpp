@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define tabu_ternure 5    //tabu list size
+#define tabu_ternure 10    //tabu list size
 
 struct tabu{
   int x;
@@ -16,21 +16,22 @@ struct tabu{
   int pos_y;
 };
 
-typedef int db;
+typedef double db;
 typedef vector<db> vd;
 typedef vector<vector<db> > vvd;
 typedef map<db,vd> mvd;
 typedef vector<tabu> vt;
-typedef set<vector<int> > svd;
+typedef set<vector<db> > svd;
 
 int is_tabu_move(int x, int y, int pos_x, int pos_y);
 void add_tabu_nodes(int x, int y, int pos_x, int posy);
 db neighbor_cost(graph & g, vd path);
 vd exchange(int i, int j, vd &n);
 void insertion(int i, int j, db a, vd &n);
-void get_neighbor(int i, int &it, int &flag, db &int_best_cost,graph & g);
+void get_neighbor(int i, int &flag, db &int_best_cost,graph & g);
+void print(vd x);
 
-
+vector< list<int> * > routes(20);
 vd path;             //local solution
 vt tabu_list;        //list of tabú movements
 mvd div_list;        //map that  contain the best 200 solution.
@@ -45,15 +46,13 @@ map<list<int> *, int> find_solution_tabu(graph & g){
   div_list.clear();
   div_tabu.clear();
   best_sol.clear();
+  routes.clear();
 
   best_cost=1<<30;
 
-  int best_it=0;
   int max_it=100;
   int i=0;
   int flag=1;
-
-    list<int> * final_path;
 
 	map<list<int> *, int> res;
 
@@ -100,8 +99,6 @@ map<list<int> *, int> find_solution_tabu(graph & g){
 	best_cost = total_cost;
 	best_sol = path;
 
-
-
   while(i++ < max_it){
     db int_best_cost;
     if(div_list.size()>0){
@@ -113,15 +110,25 @@ map<list<int> *, int> find_solution_tabu(graph & g){
     while(flag){
       div_tabu.insert(path);
       int_best_cost=neighbor_cost(g, path);
-      get_neighbor(i,best_it,flag,int_best_cost,g);
+      get_neighbor(i,flag,int_best_cost,g);
     }
   }
 
+  	int count = 0;
+
   for (auto i = best_sol.begin(); i != best_sol.end(); i++){ 
-    	final_path->push_back(*i);
+    	if (*i == 1){
+    		count++;
+			routes[count] = new list<int>;
+		}else{
+			routes[count]->push_back(*i);
+		}
     }
 
-  res[final_path] = 0;
+  for (int x = 1; x < count; x++){
+		res[routes[x]]++;
+	}
+
 
   return res;
 
@@ -148,18 +155,22 @@ db neighbor_cost(graph & g, vd aux){
 	db carga = 0;
 	float custo = 0;
 
-  for(db i= 0; i< g.dimension; i++){
+  for(db i= 0; i< aux.size(); i++){
     int to = aux[i];
+    int from = aux[i-1];
     if(carga > g.capacity){
+
       return 0;
     }
     if(to == 1){
       carga = 0;
+      if(i != 0){
+      	custo += g.matrix[from][to];
+      }
     }
     else{
-      int from = aux[i-1];
-      carga += g.nodes[to - 1].demand;
-      custo += g.matrix[from-1][to-1];
+      carga += g.nodes[to].demand;
+      custo += g.matrix[from][to];
       }
   }
   return custo;
@@ -189,12 +200,11 @@ int is_tabu_move(int x, int y, int pos_x, int pos_y){
 }
 
 //generate all neighbors and evuale each of them
-void get_neighbor(int i, int &it, int &flag,db &int_best_cost, graph & g){
+void get_neighbor(int i, int &flag,db &int_best_cost, graph & g){
   db local_best_cost=1<<30;
   db x=0,y=0;                
   int pos_x=0, pos_y=0;      
   vector<db>best_neighbor;
-  int l=1;
 
   //exchange all positions evaluating and choosing best neigbor
   for(db i=0; i<path.size(); i++){
@@ -229,7 +239,6 @@ void get_neighbor(int i, int &it, int &flag,db &int_best_cost, graph & g){
   if(local_best_cost < best_cost){
     best_cost = local_best_cost;
     best_sol = best_neighbor;
-    it = i;
   }
   if(local_best_cost < int_best_cost){
     path = best_neighbor;
@@ -238,6 +247,13 @@ void get_neighbor(int i, int &it, int &flag,db &int_best_cost, graph & g){
     flag=0;
   };
 
+}
+
+void print(vd x){
+  for(auto i : x){
+    cout<<i<<" ";
+  }
+  cout<<endl;
 }
 
 #endif
