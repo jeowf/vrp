@@ -10,12 +10,14 @@ using namespace std;
 
 
 
-float epsilon = 5.0;
-int population_size = 100;
-int selection_size = 30;
-int total_pop_size = 150;
+float epsilon = 0;
+int population_size = 500;
+int selection_size = 300;
+int total_pop_size = 1000;
 
-float mut_percent = 0.5;
+float mut_percent = 0.7;
+
+int generations = 300;
 
 
 
@@ -172,9 +174,7 @@ struct ga{
 	}
 
 
-	void selection(){
-		sel.clear();
-
+	void simple_selection(){
 		int n = population.size();
 
 		for (int i = 0; i < selection_size; i++){
@@ -184,6 +184,57 @@ struct ga{
 			sel.push_back(b);
 		}
 
+	}
+
+
+	cromossome tournment(vector<int> & refs){
+
+		int fit = 0;
+		cromossome & c = population[0];
+
+		for (auto & e : refs){
+			if (population[e].fitness > fit){
+				c = population[e];
+				fit = population[e].fitness;
+			}
+		}
+
+		return c;
+
+	}
+
+	void tournment(int k){
+		vector<int> ind(population.size());
+		for (int i = 0; i < ind.size(); i++)
+			ind[i] = i;
+
+		for (int i = 0; i < selection_size; i++){
+			shuffle(ind.begin(), ind.end(), default_random_engine(rand()) );
+
+			vector<int> ref_a;
+			vector<int> ref_b;
+			int j = 0;
+			for (; j < k; j++)
+				ref_a.push_back(ind[j]);
+
+			for (int l = 0; l < k; l++)
+				ref_b.push_back(ind[l+j]);
+
+			cromossome a = tournment(ref_a);
+			cromossome b = tournment(ref_b);
+
+			sel.push_back(a);
+			sel.push_back(b);
+		}
+
+
+	}
+
+	void selection(){
+		sel.clear();
+
+		simple_selection();
+		//tournment(8);
 
 	}
 
@@ -479,6 +530,44 @@ struct ga{
 		}
 	}
 
+
+	void mutation(cromossome & c){
+
+		int n = c.sol.size();
+
+		int a = rand() % n;
+		int b = a;
+
+		while (b == a)
+			b = rand() % n;
+
+		int v_a = c.sol[a];
+		int v_b = c.sol[b];
+
+		c.sol[a] = v_b;
+		c.sol[b] = v_a;
+
+	}
+
+	void mutation(){
+
+		int n = population.size();
+		int q = n * mut_percent;
+
+		for(int i = 0; i < q; i++){
+			int c_i = rand() % n;
+			cromossome c = population[c_i];
+
+
+			mutation(c);
+			calcule_fitness(c);
+			make_feasible(c);
+
+			population.push_back(c);
+
+
+		}
+	}
 	
 
 	void execute(){
@@ -522,7 +611,7 @@ struct ga{
 		
 
 
-		while (i < 200){
+		while (i < generations){
 
 			
 			//crossover(population[rand() % population_size],population[rand() % population_size],g);
@@ -534,25 +623,28 @@ struct ga{
 
 			clean_pop();
 
+			mutation();
+
 			sort(population.begin(), population.end(), comp);
 			population.resize(total_pop_size);
 
+			//cout << population[0].cost << endl;
 
 			i++;
 		}
 
-
+/*
 
 		for (auto & e: population[0].sol)
 			cout << e << " ";
 		cout << endl;
-
+*/
 		cout << population[0].cost << endl;
-
+/*
 		if (!population[0].feasible){
 			cout << population[0].i << ", " << population[0].e << endl;
 		}
-		
+		*/
 		//int k;
 		//cin >> k;
 
