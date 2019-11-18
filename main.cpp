@@ -59,6 +59,9 @@ int main(int argc, char const *argv[]){
 			cout << "Using Genetic Algorithm \n";
 		} else if (option == 5){
 			cout << "Using Tabu Search \n";
+		} else if (option == 6){
+			cout << "Summary of genetic \n";
+
 		} else {
 			cout << "ERROR: invalid option.\n";
 			return EXIT_FAILURE;
@@ -92,6 +95,9 @@ int main(int argc, char const *argv[]){
 		    	} else if (option == 5){
 
 		    		res = find_solution_tabu(instance);
+		    	} else if (option == 6){
+		    		GA_evaluation(instance, 20);
+		    		continue;
 		    	}
 
 		    	auto end = chrono::steady_clock::now();

@@ -10,7 +10,30 @@ using namespace std;
 
 
 
-float epsilon = 0;
+
+struct ga_sol{
+	float min_cost;
+	float max_cost;
+	float sum;
+	float time;
+	int iters;
+
+	ga_sol(){
+		min_cost = 9999999.9;
+		max_cost = 0.0;
+		sum = 0.0;
+		time = 0.0;
+		iters = 0;
+
+	}
+
+};
+
+//map<string, ga_sol> sol_summary;
+
+
+
+float epsilon = 1;
 int population_size = 500;
 int selection_size = 300;
 int total_pop_size = 1000;
@@ -21,8 +44,8 @@ int generations = 300;
 
 
 
-//unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-unsigned seed = 2;
+unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+//unsigned seed = 2;
 auto aux_seed = seed;
 
 
@@ -41,11 +64,11 @@ struct cromossome{
 
 	cromossome(){ 
 		mutation = false;
-
+		feasible = false;
 		i = e = 0;
 	}
 
-	cromossome(vector<int> s, float c, float fi, bool f = true, bool m = false){
+	cromossome(vector<int> s, float c, float fi, bool f = false, bool m = false){
 		
 		sol = s;
 		cost = c;
@@ -135,6 +158,7 @@ struct ga{
 				}
 
 				if (local_demand > g.capacity){
+
 					penalty += local_demand - g.capacity;
 
 					x_i = a_i;
@@ -158,7 +182,7 @@ struct ga{
 			c.feasible = false;
 			c.i = x_i;
 			c.e = x_e;
-		} else{
+		} else if (penalty == 0.0){
 			c.feasible = true;
 
 		}
@@ -625,6 +649,10 @@ struct ga{
 
 			mutation();
 
+
+			for (auto & e : population)
+				make_feasible(e);
+
 			sort(population.begin(), population.end(), comp);
 			population.resize(total_pop_size);
 
@@ -639,7 +667,7 @@ struct ga{
 			cout << e << " ";
 		cout << endl;
 */
-		cout << population[0].cost << endl;
+		//cout << population[0].cost << endl;
 /*
 		if (!population[0].feasible){
 			cout << population[0].i << ", " << population[0].e << endl;
@@ -664,8 +692,28 @@ map<list<int> *, int> find_solution_GA(graph & g){
 	ga gen(g);
 	gen.execute();
 
-	int a;
-	//cin >> a;
+
+	vector<int> gamb;
+	vector< list<int> *> routes(100);
+
+	gamb.push_back(1);
+	for (auto & e : gen.population[0].sol)
+		gamb.push_back(e);
+	gamb.push_back(1);
+	int count = 0;
+
+  	for (auto i = gamb.begin(); i != gamb.end(); i++){ 
+    	if (*i == 1){
+    		count++;
+			routes[count] = new list<int>;
+		}else{
+			routes[count]->push_back(*i);
+		}
+    }
+
+  	for (int x = 1; x < count; x++){
+		res[routes[x]]++;
+	}
 
 	return res;
 
@@ -673,6 +721,52 @@ map<list<int> *, int> find_solution_GA(graph & g){
 
 
 
+
+
+void GA_evaluation(graph & g, int k = 20){
+
+	ga_sol gs;
+	//sol_summary[g.name] = gs;
+
+	for (int i = 0; i < k; i++){
+		seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+		auto start = chrono::steady_clock::now();
+
+		ga gen(g);
+		gen.execute();
+
+		auto end = chrono::steady_clock::now();
+
+		float elapsed_time = (std::chrono::duration <double, std::milli> (end-start).count());
+
+		gs.time += elapsed_time;
+
+		float cost = gen.population[0].cost;
+
+		if (cost < gs.min_cost)
+			gs.min_cost = cost;
+		
+		if (cost > gs.max_cost)
+			gs.max_cost = cost;
+
+		gs.sum += cost;
+
+	}
+
+	gs.sum /= k;
+	gs.time /= k;
+
+	cout << g.name << ": \n";
+	cout << " min:" << gs.min_cost << endl;
+	cout << " max:" << gs.max_cost << endl;
+	cout << " mean:" << gs.sum << endl;
+	cout << " time:" << gs.time << endl;
+
+	cout << endl;
+	
+
+}
 
 
 
